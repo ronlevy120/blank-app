@@ -1,5 +1,5 @@
 import streamlit as st
-import pypdf
+import PyPDF2
 import requests
 
 st.set_page_config(page_title="שאל את הבוט על הפוליסה שלך", layout="wide")
@@ -7,7 +7,7 @@ st.title("שאל את הבוט על הפוליסה שלך")
 
 @st.cache_data
 def extract_text_from_pdf(uploaded_file):
-    reader = pypdf.PdfReader(uploaded_file)
+    reader = PyPDF2.PdfReader(uploaded_file)
     text = ""
     for page in reader.pages:
         text += page.extract_text() + "\n"
@@ -17,7 +17,8 @@ def extract_text_from_pdf(uploaded_file):
 def ask_question_llm(context, question):
     API_URL = "https://api-inference.huggingface.co/models/deepset/roberta-base-squad2"
     headers = {
-        "Authorization": "Bearer hf_your_huggingface_token_here"  # ניתן להסיר את השורה הזו אם אין לך טוקן
+        # אם אין לך טוקן – פשוט הסר שורה זו או השתמש בגישה חינמית
+        # "Authorization": "Bearer hf_your_huggingface_token_here"
     }
     payload = {
         "context": context,
