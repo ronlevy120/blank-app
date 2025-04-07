@@ -15,17 +15,25 @@ def extract_text_from_pdf(uploaded_file):
 
 @st.cache_data
 def ask_question_llm(context, question):
-    API_URL = "https://api-inference.huggingface.co/models/deepset/roberta-base-squad2"
+    API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
     headers = {
-        # אם אין לך טוקן – פשוט הסר שורה זו או השתמש בגישה חינמית
-        # "Authorization": "Bearer hf_your_huggingface_token_here"
+        # ניתן להוסיף טוקן של Hugging Face כאן אם יש צורך
+        # "Authorization": "Bearer hf_xxx"
     }
-    payload = {
-        "context": context,
-        "question": question
-    }
+    prompt = f"Answer the following question based on the policy text:\nQuestion: {question}\nPolicy: {context}"
+    payload = {"inputs": prompt}
+
     response = requests.post(API_URL, headers=headers, json=payload)
-    return response.json().get("answer", "לא הצלחתי למצוא תשובה.")
+
+    if response.status_code != 200:
+        st.error(f"שגיאה בתשובה מה-LLM: {response.status_code} - {response.text}")
+        return "לא הצלחתי להבין את התשובה מהמודל."
+
+    try:
+        return response.json()[0]['generated_text']
+    except Exception as e:
+        st.error(f"שגיאה בפענוח JSON: {e}")
+        return "הייתה שגיאה בתהליך הפענוח."
 
 uploaded_file = st.file_uploader("העלה את מסמך הפוליסה שלך (PDF)", type=["pdf"])
 
