@@ -15,12 +15,10 @@ def extract_text_from_pdf(uploaded_file):
 
 @st.cache_data
 def ask_question_llm(context, question):
-    API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
-    headers = {
-        # ניתן להוסיף טוקן של Hugging Face כאן אם יש צורך
-        # "Authorization": "Bearer hf_xxx"
-    }
-    prompt = f"Answer the following question based on the policy text:\nQuestion: {question}\nPolicy: {context}"
+    API_URL = "https://api-inference.huggingface.co/models/openchat/openchat-3.5-1210"
+    headers = {}  # אין צורך בטוקן
+
+    prompt = f"Answer the question based on the insurance policy below.\nPolicy: {context}\n\nQuestion: {question}"
     payload = {"inputs": prompt}
 
     response = requests.post(API_URL, headers=headers, json=payload)
