@@ -1,34 +1,42 @@
 import streamlit as st
-import pandas as pd
-import altair as alt
+import PyPDF2
+import requests
 
-st.set_page_config(page_title="דשבורד לדוגמה", layout="wide")
+st.set_page_config(page_title="שאל את הבוט על הפוליסה שלך", layout="wide")
+st.title("שאל את הבוט על הפוליסה שלך")
 
-st.title("דשבורד מכירות - דוגמה")
+@st.cache_data
+def extract_text_from_pdf(uploaded_file):
+    reader = PyPDF2.PdfReader(uploaded_file)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text() + "\n"
+    return text
 
-# נתונים פיקטיביים
-data = {
-    "חודש": ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני"],
-    "מכירות": [15000, 18000, 12000, 20000, 22000, 17000],
-    "קטגוריה": ["אלקטרוניקה", "ביגוד", "אלקטרוניקה", "בית", "ביגוד", "בית"]
-}
-df = pd.DataFrame(data)
+@st.cache_data
+def ask_question_llm(context, question):
+    API_URL = "https://api-inference.huggingface.co/models/deepset/roberta-base-squad2"
+    headers = {
+        # ניתן להסיר את השורה הבאה לגישה חינמית מוגבלת, או להכניס את הטוקן שלך
+        "Authorization": "Bearer hf_your_huggingface_token_here"
+    }
+    payload = {
+        "context": context,
+        "question": question
+    }
+    response = requests.post(API_URL, headers=headers, json=payload)
+    return response.json().get("answer", "לא הצלחתי למצוא תשובה.")
 
-# פילטר לפי קטגוריה
-קטגוריה = st.selectbox("בחר קטגוריה", options=["הכל"] + df["קטגוריה"].unique().tolist())
+uploaded_file = st.file_uploader("העלה את מסמך הפוליסה שלך (PDF)", type=["pdf"])
 
-if קטגוריה != "הכל":
-    df = df[df["קטגוריה"] == קטגוריה]
+if uploaded_file:
+    with st.spinner("טוען את הפוליסה..."):
+        policy_text = extract_text_from_pdf(uploaded_file)
+    st.success("המסמך נטען בהצלחה!")
 
-# הצגת טבלה
-st.subheader("טבלת נתונים")
-st.dataframe(df)
-
-# גרף
-st.subheader("גרף מכירות")
-chart = alt.Chart(df).mark_bar().encode(
-    x='חודש',
-    y='מכירות',
-    color='קטגוריה'
-).properties(width=700)
-st.altair_chart(chart)
+    question = st.text_input("מה ברצונך לשאול את הבוט?")
+    if question:
+        with st.spinner("חושב על התשובה..."):
+            answer = ask_question_llm(policy_text, question)
+        st.subheader("תשובת הבוט:")
+        st.write(answer)
