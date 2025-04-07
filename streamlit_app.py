@@ -3,10 +3,9 @@ import PyPDF2
 import requests
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 
 st.set_page_config(page_title="שאל את הבוט על הפוליסה שלך - RAG", layout="wide")
-st.title("שאל את הבוט על הפוליסה שלך (RAG)")
+st.title("שאל את הבוט על הפוליסה שלך (RAG עם טוקן מוגן)")
 
 @st.cache_data
 def extract_text_from_pdf(uploaded_file):
@@ -19,8 +18,7 @@ def extract_text_from_pdf(uploaded_file):
     return text
 
 @st.cache_resource
-def chunk_text(text, max_chars=500):
-    # מחלק את הפוליסה לצ'אנקים בגודל קבוע
+def chunk_text(text, max_chars=1000):
     paragraphs = text.split("\n")
     chunks = []
     current_chunk = ""
@@ -48,7 +46,9 @@ def find_relevant_chunks(question, vectorizer, embeddings, chunks, top_k=3):
 
 def ask_llm_with_context(context, question):
     API_URL = "https://api-inference.huggingface.co/models/openchat/openchat-3.5-1210"
-    headers = {}
+    headers = {
+        "Authorization": f"Bearer {st.secrets['hf_token']}"
+    }
     prompt = f"Based on the following context from an insurance policy, answer the question.\n\nContext:\n{context}\n\nQuestion: {question}"
     payload = {"inputs": prompt}
 
