@@ -19,7 +19,7 @@ def extract_text_from_pdf(uploaded_file):
     return text
 
 @st.cache_resource
-def chunk_text(text, max_chars=1000):
+def chunk_text(text, max_chars=500):
     # מחלק את הפוליסה לצ'אנקים בגודל קבוע
     paragraphs = text.split("\n")
     chunks = []
