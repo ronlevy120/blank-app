@@ -5,7 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 st.set_page_config(page_title="שאל את הבוט על הפוליסה שלך - RAG", layout="wide")
-st.title("שאל את הבוט על הפוליסה שלך (RAG עם Zephyr + תרגום אוטומטי)")
+st.title("שאל את הבוט על הפוליסה שלך (RAG עם Zephyr + תרגום + פולו-אפ)")
 
 @st.cache_data
 def extract_text_from_pdf(uploaded_file):
@@ -46,9 +46,7 @@ def find_relevant_chunks(question, vectorizer, embeddings, chunks, top_k=3):
 
 def translate_hebrew_to_english(text):
     API_URL = "https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-he-en"
-    headers = {
-        "Authorization": f"Bearer {st.secrets['hf_token']}"
-    }
+    headers = {"Authorization": f"Bearer {st.secrets['hf_token']}"}
     payload = {"inputs": text}
     response = requests.post(API_URL, headers=headers, json=payload)
     if response.status_code == 200:
@@ -57,23 +55,28 @@ def translate_hebrew_to_english(text):
 
 def translate_english_to_hebrew(text):
     API_URL = "https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-en-he"
-    headers = {
-        "Authorization": f"Bearer {st.secrets['hf_token']}"
-    }
+    headers = {"Authorization": f"Bearer {st.secrets['hf_token']}"}
     payload = {"inputs": text}
     response = requests.post(API_URL, headers=headers, json=payload)
     if response.status_code == 200:
         return response.json()[0]['translation_text']
     return text
 
-def ask_llm_with_context(context, question):
+def ask_llm_with_context(context, question, chat_history):
     API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha"
-    headers = {
-        "Authorization": f"Bearer {st.secrets['hf_token']}"
-    }
-    prompt = f"Answer the question based on the following context from an insurance policy.\n\nContext:\n{context}\n\nQuestion: {question}"
-    payload = {"inputs": prompt}
+    headers = {"Authorization": f"Bearer {st.secrets['hf_token']}"}
 
+    prompt = (
+        "You are a helpful insurance assistant.\n"
+        "Answer the user's question based only on the provided context, without repeating the context or question.\n"
+        "Your response must be concise, include all relevant details, and never exceed 100 words.\n"
+        "If the question is about coverages, list them clearly and number them (1, 2, 3...) so the user can follow up.\n"
+        f"\nPrevious questions and answers:\n{chat_history}\n"
+        f"\nContext:\n{context}\n"
+        f"\nQuestion: {question}"
+    )
+
+    payload = {"inputs": prompt}
     response = requests.post(API_URL, headers=headers, json=payload)
     if response.status_code != 200:
         return f"שגיאה מה-LLM: {response.status_code} - {response.text}"
@@ -91,13 +94,17 @@ if uploaded_file:
         vectorizer, embeddings = embed_chunks(chunks)
     st.success(f"המסמך חולק ל-{len(chunks)} קטעים.")
 
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = ""
+
     question = st.text_input("מה ברצונך לשאול את הבוט?")
     if question:
         translated_question = translate_hebrew_to_english(question)
         relevant_chunks = find_relevant_chunks(translated_question, vectorizer, embeddings, chunks)
         context = "\n".join(relevant_chunks)
         with st.spinner("חושב על התשובה..."):
-            english_answer = ask_llm_with_context(context, translated_question)
+            english_answer = ask_llm_with_context(context, translated_question, st.session_state.chat_history)
             hebrew_answer = translate_english_to_hebrew(english_answer)
+        st.session_state.chat_history += f"Question: {translated_question}\nAnswer: {english_answer}\n"
         st.subheader("תשובת הבוט:")
         st.write(hebrew_answer)
