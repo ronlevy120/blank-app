@@ -53,6 +53,13 @@ def translate_hebrew_to_english(text):
         return response.json()[0]['translation_text']
     return text
 
+def translate_context_chunks(chunks):
+    translated_chunks = []
+    for chunk in chunks:
+        translated = translate_hebrew_to_english(chunk)
+        translated_chunks.append(translated)
+    return translated_chunks
+
 def ask_llm_with_context(context, question, chat_history):
     API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha"
     headers = {"Authorization": f"Bearer {st.secrets['hf_token']}"}
@@ -92,9 +99,9 @@ if uploaded_file:
     if question:
         translated_question = translate_hebrew_to_english(question)
         relevant_chunks = find_relevant_chunks(translated_question, vectorizer, embeddings, chunks)
-        context = "\n".join(relevant_chunks)
+        translated_context = "\n".join(translate_context_chunks(relevant_chunks))
         with st.spinner("חושב על התשובה..."):
-            english_answer = ask_llm_with_context(context, translated_question, st.session_state.chat_history)
+            english_answer = ask_llm_with_context(translated_context, translated_question, st.session_state.chat_history)
         st.session_state.chat_history += f"Question: {translated_question}\nAnswer: {english_answer}\n"
         st.subheader("Bot's Answer:")
         st.write(english_answer)
