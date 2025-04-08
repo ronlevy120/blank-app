@@ -2,8 +2,7 @@ import streamlit as st
 import PyPDF2
 import requests
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise
-import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity
 
 st.set_page_config(page_title="שאל את הבוט על הפוליסה שלך - RAG", layout="wide") st.title("שאל את הבוט על הפוליסה שלך (RAG עם Zephyr + תרגום + פולו-אפ)")
 
