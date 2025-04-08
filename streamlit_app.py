@@ -45,7 +45,7 @@ def find_relevant_chunks(question, vectorizer, embeddings, chunks, top_k=3):
     return [chunks[i] for i in top_indices]
 
 def ask_llm_with_context(context, question):
-   API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha"
+  API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha"
     headers = {
         "Authorization": f"Bearer {st.secrets['hf_token']}"
     }
