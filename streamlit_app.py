@@ -14,7 +14,7 @@ def translate_hebrew_to_english(text): API_URL = "https://api-inference.huggingf
 
 def translate_english_to_hebrew(text): API_URL = "https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-en-he" headers = { "Authorization": f"Bearer {st.secrets['hf_token']}" } payload = {"inputs": text} response = requests.post(API_URL, headers=headers, json=payload) if response.status_code == 200: return response.json()[0]['translation_text'] return text
 
-def ask_llm_with_context(context, question, chat_history): API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha" headers = { "Authorization": f"Bearer {st.secrets['hf_token']}" } # כולל גם היסטוריית שיחה כקונטקסט prompt = f"You are a helpful insurance assistant.\nPrevious questions and answers:\n{chat_history}\n\nNow answer this question based on the insurance policy context below.\n\nContext:\n{context}\n\nQuestion: {question}" payload = {"inputs": prompt}
+def ask_llm_with_context(context, question, chat_history): API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha" headers = { "Authorization": f"Bearer {st.secrets['hf_token']}" } prompt = f"You are a helpful insurance assistant.\nYour task is to answer user questions based on the provided context.\nBe concise, yet make sure to include all relevant details from the context.\nIf the question is about coverages, list them clearly and number them (1, 2, 3...) so the user can follow up.\nYou must not return the full context in your answer, only the distilled answer.\n\nPrevious questions and answers:\n{chat_history}\n\nContext:\n{context}\n\nQuestion: {question}" payload = {"inputs": prompt}
 
 response = requests.post(API_URL, headers=headers, json=payload)
 if response.status_code != 200:
