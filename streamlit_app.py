@@ -33,7 +33,7 @@ def chunk_text(text, max_chars=1000):
     return chunks
 
 @st.cache_resource
-def embed_chunks(chunks):
+def embed_chunks(chunks,refresh_feature=None):
     vectorizer = TfidfVectorizer().fit(chunks)
     embeddings = vectorizer.transform(chunks)
     return vectorizer, embeddings
