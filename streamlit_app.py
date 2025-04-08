@@ -53,15 +53,6 @@ def translate_hebrew_to_english(text):
         return response.json()[0]['translation_text']
     return text
 
-def translate_english_to_hebrew(text):
-    API_URL = "https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-en-he"
-    headers = {"Authorization": f"Bearer {st.secrets['hf_token']}"}
-    payload = {"inputs": text}
-    response = requests.post(API_URL, headers=headers, json=payload)
-    if response.status_code == 200:
-        return response.json()[0]['translation_text']
-    return text
-
 def ask_llm_with_context(context, question, chat_history):
     API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha"
     headers = {"Authorization": f"Bearer {st.secrets['hf_token']}"}
@@ -69,7 +60,7 @@ def ask_llm_with_context(context, question, chat_history):
     prompt = (
         "You are a helpful insurance assistant.\n"
         "Answer the user's question based only on the provided context, without repeating the context or question.\n"
-        "Your response must be concise, include all relevant details, and never exceed 100 words.\n"
+        "Your response should be accurate and include all relevant details.\n"
         "If the question is about coverages, list them clearly and number them (1, 2, 3...) so the user can follow up.\n"
         f"\nPrevious questions and answers:\n{chat_history}\n"
         f"\nContext:\n{context}\n"
@@ -104,7 +95,7 @@ if uploaded_file:
         context = "\n".join(relevant_chunks)
         with st.spinner("חושב על התשובה..."):
             english_answer = ask_llm_with_context(context, translated_question, st.session_state.chat_history)
-            hebrew_answer = translate_english_to_hebrew(english_answer)
         st.session_state.chat_history += f"Question: {translated_question}\nAnswer: {english_answer}\n"
-        st.subheader("תשובת הבוט:")
-        st.write(hebrew_answer)
+        st.subheader("Bot's Answer:")
+        st.write(english_answer)
+
