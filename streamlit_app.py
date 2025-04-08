@@ -5,7 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 st.set_page_config(page_title="שאל את הבוט על הפוליסה שלך - RAG", layout="wide")
-st.title("שאל את הבוט על הפוליסה שלך (RAG עם טוקן מוגן)")
+st.title("שאל את הבוט על הפוליסה שלך (RAG עם Zephyr)")
 
 @st.cache_data
 def extract_text_from_pdf(uploaded_file):
@@ -33,7 +33,7 @@ def chunk_text(text, max_chars=1000):
     return chunks
 
 @st.cache_resource
-def embed_chunks(chunks,refresh_feature=None):
+def embed_chunks(chunks):
     vectorizer = TfidfVectorizer().fit(chunks)
     embeddings = vectorizer.transform(chunks)
     return vectorizer, embeddings
@@ -45,7 +45,7 @@ def find_relevant_chunks(question, vectorizer, embeddings, chunks, top_k=3):
     return [chunks[i] for i in top_indices]
 
 def ask_llm_with_context(context, question):
-  API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha"
+    API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha"
     headers = {
         "Authorization": f"Bearer {st.secrets['hf_token']}"
     }
